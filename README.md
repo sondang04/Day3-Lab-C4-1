@@ -32,7 +32,8 @@ Bài Lab giúp bạn hiểu rõ sự tiến hóa qua 4 cấp độ của hệ th
 ├── 📁 src/                      <-- 💻 MÃ NGUỒN PYTHON (BOILERPLATE)
 │   ├── 📄 tools.py              <-- 🛠️ [Role 2] Khai báo các công cụ (Tools)
 │   ├── 📄 prompts.py            <-- 🧠 [Role 3] ReAct System Prompt & Guardrails
-│   └── 📄 app.py                <-- 🚀 [Role 4] Core App ghép nối & chạy ReAct Loop
+│   ├── 📄 providers.py          <-- 🔌 Multi-Provider LLM Adapter (Gemini/OpenAI/Anthropic/Mock)
+│   └── 📄 app.py                <-- 🚀 [Role 4] Core App: ReAct Loop + Giao diện Web (1 file)
 │
 └── 📁 docs/                     <-- 📚 TÀI LIỆU HƯỚNG DẪN & BÁO CÁO
     ├── 📄 CODELAB.md            <-- 🎓 [LMS Format] Hướng dẫn thực hành từng bước Codelab
@@ -40,6 +41,44 @@ Bài Lab giúp bạn hiểu rõ sự tiến hóa qua 4 cấp độ của hệ th
     ├── 📄 DANH_SACH_DE_TAI.md    <-- 💡 Danh sách 10 chủ đề gợi ý
     └── 📄 trace_eval.md          <-- 📊 [Role 5] Báo cáo Log Trace & Đánh giá Agentic Fit
 ```
+
+---
+
+### ▶️ 2.1. CÁCH CHẠY DỰ ÁN
+
+```bash
+# 1. Cài môi trường
+python -m venv .venv
+.venv\Scripts\Activate.ps1        # Windows PowerShell (macOS/Linux: source .venv/bin/activate)
+pip install -r requirements.txt
+copy .env.example .env            # rồi điền API key vào .env
+
+# 2. Chạy bằng dòng lệnh (CLI)
+python src/app.py                 # chạy test case #1
+python src/app.py 11              # chạy test case #11 (bẫy Guardrail)
+
+# 3. Chạy giao diện Web (khuyên dùng khi demo) — vẫn là file app.py đó
+streamlit run src/app.py
+```
+
+> 📌 Cả CLI lẫn giao diện Web đều nằm trong **một file `src/app.py`**. File tự nhận biết
+> đang được gọi bằng `python` hay bằng `streamlit run` (hàm `running_under_streamlit()`)
+> để chọn chế độ tương ứng.
+
+> 💡 **Chạy offline không cần API key**: đặt `LLM_PROVIDER=mock` trong `.env`
+> (hoặc chọn `mock` ở sidebar của giao diện Web). Mock Provider mô phỏng đúng
+> định dạng ReAct nên toàn bộ vòng lặp, tool và Guardrails vẫn chạy thật.
+
+**6 tab của giao diện Web (`streamlit run src/app.py`)**
+
+| Tab | Chức năng |
+| :-- | :-- |
+| ⚖️ **So sánh** | Chạy cùng 1 câu hỏi trên Chatbot Baseline và ReAct Agent, hiện bảng đối chiếu + tự chấm Rubric |
+| 🤖 **ReAct Agent** | Hội thoại nhiều lượt, xem trace `Thought → Action → Observation` theo thời gian thực |
+| 🧪 **Test Suite** | Chạy hàng loạt 15 test cases, đối chiếu `expected_tools`, xuất báo cáo Markdown cho `docs/trace_eval.md` |
+| 👥 **Hồ sơ ứng viên** | Tra cứu & lọc 50 hồ sơ trong `config/candidates.json` |
+| 🛠️ **Tool Playground** | Gọi thử từng tool độc lập (kiểm thử Tool contract trước khi gắn Agent) |
+| 🧠 **Prompts & Guardrails** | Xem System Prompt và bảng 7 Guardrails đang hoạt động |
 
 ---
 
