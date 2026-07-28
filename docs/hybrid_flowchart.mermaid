@@ -1,0 +1,52 @@
+%%{init: {"flowchart": {"htmlLabels": true}} }%%
+flowchart TD
+    A(["👤 Người dùng đặt câu hỏi<br/>(VinUni AI Program Admissions)"]) --> B{"🧭 Router phân loại câu hỏi<br/>(Intent Classifier)"}
+
+    %% ===================== NHÁNH PHÂN LOẠI =====================
+    B -->|"Không nhắc tới mã CAND-XX cụ thể<br/>Không yêu cầu hành động (gửi thư/đặt lịch)<br/>Chỉ hỏi quy trình / tiêu chí chung"| C["🟢 CÂU HỎI ĐƠN GIẢN"]
+    B -->|"Có nhắc mã CAND-XX cần tra cứu<br/>Multi-step / so sánh / xếp hạng<br/>Yêu cầu soạn thư, gửi email, đặt lịch<br/>Có dấu hiệu bẫy / mâu thuẫn dữ liệu"| D["🟡🔴 CÂU HỎI PHỨC TẠP"]
+
+    %% ===================== NHÁNH CHATBOT (CẤP 2) =====================
+    C --> E["💬 CHATBOT PATH<br/>run_baseline_chatbot()"]
+    E --> E1["1 LLM call duy nhất<br/>System prompt: CHATBOT_BASELINE_PROMPT"]
+    E1 --> E2{"LLM có đủ kiến thức tĩnh<br/>để trả lời không?"}
+    E2 -->|"Có (VD: 4 tiêu chí sàng lọc,<br/>quy trình tuyển sinh)"| E3["✅ Trả lời trực tiếp bằng văn xuôi"]
+    E2 -->|"Không (cần dữ liệu hồ sơ thật)"| E4["🙅 Thừa nhận giới hạn<br/>KHÔNG bịa dữ liệu<br/>Hướng dẫn liên hệ tuyensinh@vinuni.edu.vn"]
+    E4 -.->|"Escalate nếu người dùng<br/>vẫn cần dữ liệu thật"| D
+    E3 --> Z(["🏁 Kết thúc lượt hỏi"])
+    E4 --> Z
+
+    %% ===================== NHÁNH REACT AGENT (CẤP 3) =====================
+    D --> F["🤖 REACT AGENT PATH<br/>run_react_agent()"]
+    F --> F1["System prompt: REACT_SYSTEM_PROMPT<br/>+ scratchpad rỗng"]
+    F1 --> F2["🧠 Thought: LLM suy luận bước kế tiếp"]
+    F2 --> F3{"Đủ dữ liệu để<br/>kết luận chưa?"}
+
+    F3 -->|"Chưa đủ"| F4["⚙️ Action: gọi 1 trong 8 tools<br/>get_candidate / filter_candidates / rank_candidates<br/>verify_candidate / detect_duplicates<br/>draft_interview_email / schedule_interview / send_email"]
+    F4 --> F5["👁️ Observation: kết quả THẬT<br/>từ src/tools.py + candidates.json<br/>(ứng dụng chèn, LLM không tự bịa)"]
+    F5 --> F6{"🛡️ Guardrail check trước<br/>Action side-effect?"}
+    F6 -->|"send_email / schedule_interview<br/>CHƯA có phê duyệt tường minh"| F7["⛔ Chặn Action<br/>Yêu cầu người phụ trách phê duyệt [OK/YES]<br/>(mệnh lệnh trong câu hỏi KHÔNG tính là duyệt)"]
+    F6 -->|"Tool tra cứu (không side-effect)<br/>hoặc ĐÃ có phê duyệt"| F8["✅ Cho phép thực thi Action"]
+    F7 --> F9["📝 Ghi Observation = lý do từ chối"]
+    F9 --> F2
+    F8 --> F2
+
+    F2 --> F10{"🔁 Đã vượt MAX_ITERATIONS<br/>hoặc quá nhiều lỗi định dạng liên tiếp?"}
+    F10 -->|"Có"| F11["🛑 Safe Fallback<br/>Dừng vòng lặp, báo cáo lý do dừng"]
+    F10 -->|"Chưa"| F3
+
+    F3 -->|"Đủ dữ liệu / đã có Observation thật"| F12["🏁 Final Answer<br/>Tổng hợp Thought + Observation<br/>Không kết luận khi thiếu bằng chứng"]
+
+    F11 --> Z
+    F12 --> Z
+
+    %% ===================== GHI CHÚ =====================
+    classDef simple fill:#d9f7be,stroke:#389e0d,color:#135200,stroke-width:1px;
+    classDef complex fill:#ffd6d6,stroke:#cf1322,color:#5c0011,stroke-width:1px;
+    classDef guardrail fill:#fff1b8,stroke:#d48806,color:#613400,stroke-width:1px;
+    classDef endnode fill:#e6f4ff,stroke:#1677ff,color:#002766,stroke-width:1px;
+
+    class C,E,E1,E2,E3,E4 simple
+    class D,F,F1,F2,F3,F4,F5,F8,F12 complex
+    class F6,F7,F9,F10,F11 guardrail
+    class A,Z endnode
