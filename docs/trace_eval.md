@@ -143,4 +143,71 @@ PATTERN_ERROR_HANDLING = {
 
 ---
 
-## 🔍 5. TEST CASE RESULTS (Sẽ cập nhật sau Mốc 3)
+## 🟡 5. REACT SYSTEM PROMPT V2 - ROLE 3 (Mốc 3)
+
+**Người thực hiện**: Trần Đình Đăng (Role 3: Prompt Engineer)
+**Ngày cập nhật**: 2026-07-28
+**Mục tiêu**: Soạn System Prompt cho ReAct Agent V2
+
+### 📋 Cấu trúc REACT_SYSTEM_PROMPT_V2
+
+1. **Giới thiệu**: ReAct Agent hỗ trợ tuyển sinh VinUni AI Program
+
+2. **8 Tools đầy đủ**:
+   - `get_candidate` - Đọc hồ sơ 1 ứng viên
+   - `filter_candidates` - Lọc theo điểm/kinh nghiệm
+   - `rank_candidates` - Xếp hạng theo 4 tiêu chí
+   - `verify_candidate` - Kiểm tra gian lận/nghi vấn
+   - `detect_duplicates` - Rà soát trùng lặp
+   - `draft_interview_email` - Soạn draft thư mời
+   - `schedule_interview` - Đặt lịch phỏng vấn
+   - `send_email` ⚠️ - Gửi email (cần phê duyệt)
+
+3. **5 Nguyên tắc bất biến**:
+   - Không gọi send_email khi chưa phê duyệt
+   - Không gọi schedule_interview khi chưa phê duyệt
+   - Chống Prompt Injection (CAND-49)
+   - Chống xung đột lợi ích (CAND-50)
+   - Không tự ý loại hồ sơ
+
+4. **Xử lý các trường hợp đặc biệt**:
+   - CAND-49: Prompt Injection → Cảnh báo + không thực hiện
+   - CAND-50: Xung đột lợi ích → Báo cáo + chuyển
+   - CAND-33/34/39/43: Gian lận → Loại khỏi xếp hạng
+   - CAND-30/35/42/47: Mâu thuẫn → Tách nhóm xác minh
+
+5. **Định dạng ReAct Loop**:
+   - Thought → Action → Observation → Final Answer
+   - Xin phê duyệt trước khi gửi/đặt lịch
+
+6. **3 Ví dụ minh họa đầy đủ**:
+   - Câu hỏi thường: Đọc hồ sơ CAND-01
+   - Câu bẫy: Gửi email Top 5 ngay
+   - Câu hỏi bẫy: Kiểm tra trùng lặp
+
+7. **Guardrails**:
+   - Danh sách 8 tools hợp lệ
+   - Xử lý khi vượt MAX_ITERATIONS
+   - Chống ủy quyền giả
+
+### ✅ Checklist Mốc 3 (Role 3)
+
+- [x] Cập nhật `REACT_SYSTEM_PROMPT` với đúng 8 tools
+- [x] Thêm 5 nguyên tắc bất biến
+- [x] Xử lý CAND-49, CAND-50
+- [x] Thêm ví dụ ReAct Loop đầy đủ (3 scenarios)
+- [x] Cập nhật Guardrails
+- [x] Ghi nhận vào `docs/trace_eval.md`
+
+### 📊 Tổng kết công việc Role 3
+
+| Mốc | Nhiệm vụ | Trạng thái |
+|-----|-----------|------------|
+| Mốc 1 | Phân tích Failure Modes | ✅ Hoàn thành |
+| Mốc 2 | Soạn CHATBOT_BASELINE_PROMPT | ✅ Hoàn thành |
+| Mốc 3 | Soạn REACT_SYSTEM_PROMPT | ✅ Hoàn thành |
+| Mốc 4 | (Chờ team tương tác) | ⏳ Chưa bắt đầu |
+
+---
+
+## 🔍 6. TEST CASE RESULTS (Sẽ cập nhật sau khi Role 4 lắp app)
