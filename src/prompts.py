@@ -579,7 +579,7 @@ TOOL_FAILURE_MODES = """
 │  • GUARDRAIL KÉP: Vừa chống tự ý gửi, vừa chống prompt injection        │
 │    từ hồ sơ ứng viên (CAND-49)                                          │
 └─────────────────────────────────────────────────────────────────────────────┘
-
+"""
 # ═══════════════════════════════════════════════════════════════════════════════
 # TỔNG HỢP: CÁC FAILURE PATTERNS CHUNG & HƯỚNG DẪN XỬ LÝ CHO AGENT
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -736,4 +736,3 @@ BẮT ĐẦU:
 """
 
 SAFE_FALLBACK_MESSAGE = "Xin lỗi, tôi đã cố gắng giải quyết yêu cầu nhưng gặp giới hạn xử lý. Để được hỗ trợ tốt hơn, bạn vui lòng liên hệ phòng tuyển sinh trực tiếp."
-"""

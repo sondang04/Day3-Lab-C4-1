@@ -132,12 +132,62 @@ class OpenRouterProvider(BaseLLMProvider):
 
 
 class MockProvider(BaseLLMProvider):
-    """Offline Mock Provider (Cho bài test không cần kết nối API)"""
+    """
+    Offline Mock Provider (Cho bài test deterministic không cần kết nối API).
+
+    Mô phỏng đúng định dạng ReAct của đề tài "Sàng lọc hồ sơ tuyển sinh":
+    - Nếu prompt CHƯA có Observation nào → sinh ra Thought + Action gọi tool phù hợp.
+    - Nếu prompt ĐÃ có Observation từ tool thật → sinh ra Thought + Final Answer.
+    """
+    model_name = "offline-mock-v2"
+
     def generate(self, prompt: str, system_prompt: str = "") -> str:
+        import re as _re
+
         text = prompt.lower()
-        if "thời tiết" in text and "hà nội" in text:
-            return "Thought: Cần tra cứu thời tiết Hà Nội.\nAction: get_weather['Hà Nội']"
-        return "🤖 [Mock Provider]: Phản hồi giả lập offline cho bài test."
+        # app.py luôn mở đầu prompt của ReAct loop bằng "Question:" → dùng làm dấu hiệu nhận biết
+        is_react = prompt.lstrip().startswith("Question:")
+
+        # Luồng Chatbot Baseline: chỉ trả lời văn xuôi, không tool
+        if not is_react:
+            return (
+                "🤖 [Mock Provider - Chatbot Baseline]: Tôi là chatbot tư vấn tuyển sinh và "
+                "KHÔNG có quyền truy cập dữ liệu hồ sơ ứng viên, nên tôi chỉ có thể nói về "
+                "quy trình và 4 tiêu chí sàng lọc (điểm thi, kinh nghiệm liên quan, bằng chứng "
+                "lập trình, thư giới thiệu đã xác minh). Để tra cứu hồ sơ cụ thể, vui lòng liên "
+                "hệ phòng tuyển sinh: tuyensinh@vinuni.edu.vn."
+            )
+
+        # Luồng ReAct: đã có Observation THẬT trong scratchpad (dòng bắt đầu bằng "Observation:")
+        if _re.search(r"(?m)^observation\s*:", text):
+            return (
+                "Thought: Tôi đã có Observation thật từ tool, đủ dữ liệu để kết luận.\n"
+                "Final Answer: [Mock] Dựa trên dữ liệu tool trả về ở trên, tôi tổng hợp kết quả "
+                "theo 4 tiêu chí sàng lọc. Với các hành động gửi email hoặc đặt lịch, tôi dừng lại "
+                "và cần phê duyệt tường minh [OK/YES] từ người phụ trách trước khi thực hiện."
+            )
+
+        # Luồng ReAct bước 1: chọn tool theo từ khóa trong câu hỏi
+        cand_ids = _re.findall(r"cand-\d{2}", text)
+        if "trùng lặp" in text or "sao chép" in text:
+            return ("Thought: Cần rà soát toàn bộ 50 hồ sơ để tìm dấu hiệu trùng lặp.\n"
+                    "Action: detect_duplicates[]")
+        if cand_ids and ("xác minh" in text or "gian lận" in text or "nghi vấn" in text):
+            return (f"Thought: Hồ sơ {cand_ids[0].upper()} có dấu hiệu cần kiểm tra tính xác thực.\n"
+                    f"Action: verify_candidate[\"{cand_ids[0].upper()}\"]")
+        if cand_ids:
+            return (f"Thought: Cần đọc chi tiết hồ sơ {cand_ids[0].upper()} trước khi đánh giá.\n"
+                    f"Action: get_candidate[\"{cand_ids[0].upper()}\"]")
+        if "top" in text or "xếp hạng" in text or "phù hợp nhất" in text:
+            return ("Thought: Cần xếp hạng ứng viên theo 4 tiêu chí để lấy danh sách tốt nhất.\n"
+                    "Action: rank_candidates[top_k=5]")
+        if "lọc" in text or "điểm thi từ" in text or "trở lên" in text:
+            return ("Thought: Cần lọc ứng viên theo ngưỡng điểm và số năm kinh nghiệm.\n"
+                    "Action: filter_candidates[min_score=80, min_experience_years=1.0]")
+        return ("Thought: Câu hỏi này thuộc về quy định chung của chương trình, "
+                "không cần gọi tool tra cứu hồ sơ.\n"
+                "Final Answer: [Mock] Chương trình sàng lọc theo 4 tiêu chí: điểm thi đầu vào, "
+                "kinh nghiệm liên quan, bằng chứng lập trình và thư giới thiệu đã xác minh.")
 
 
 def get_llm_provider(provider_name: str = None) -> BaseLLMProvider:
